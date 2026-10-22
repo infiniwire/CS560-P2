@@ -24,16 +24,17 @@ export function createApp() {
     }
   });
 
-  app.use('/api', trackUserActivity);
-  app.post('/api/user', (req, res) => {
+  app.post('/api/user', trackUserActivity, (req, res) => {
     if (!req.user) {
       return res.status(400).json({ error: 'X-User-Id is required.' });
     }
+
     res.json(req.user);
   });
+
   app.use('/api/recalls', recallsRouter);
-  app.use('/api/products', productsRouter);
-  app.use('/api/watchlist', watchlistRouter);
+  app.use('/api/products', trackUserActivity, productsRouter);
+  app.use('/api/watchlist', trackUserActivity, watchlistRouter);
 
   app.use(
     express.static(fileURLToPath(new URL('../public/', import.meta.url))),
