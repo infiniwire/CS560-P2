@@ -1,26 +1,38 @@
 import { getUserId } from './user.js';
 
-async function fetchJson(url, signal, { method = 'GET', data } = {}) {
-  const userId = getUserId();
+async function fetchJson(
+  url,
+  signal,
+  { method = 'GET', data, includeUser = true } = {},
+) {
   let response;
+
   try {
     response = await fetch(url, {
       signal,
       method,
       headers: {
-        'X-User-Id': userId,
+        ...(includeUser ? { 'X-User-Id': getUserId() } : {}),
         ...(data === undefined ? {} : { 'Content-Type': 'application/json' }),
       },
       ...(data === undefined ? {} : { body: JSON.stringify(data) }),
     });
   } catch (error) {
     if (error.name === 'AbortError') throw error;
-    throw new Error('Unable to connect. Please try again.', { cause: error });
+
+    throw new Error('Unable to connect. Please try again.', {
+      cause: error,
+    });
   }
+
   if (response.status === 204) return null;
+
   const body = await response.json();
-  if (!response.ok)
+
+  if (!response.ok) {
     throw new Error(body.error || 'Unable to complete the request.');
+  }
+
   return body;
 }
 
@@ -49,13 +61,20 @@ export async function fetchRecalls({
     updatedFrom,
     updatedTo,
   });
-  return fetchJson(`/api/recalls?${query}`, signal);
+  return fetchJson(`/api/recalls?${query}`, signal, {
+    includeUser: false,
+  });
 }
 
-export const fetchRecallFilters = () => fetchJson('/api/recalls/filters');
+export const fetchRecallFilters = () =>
+  fetchJson('/api/recalls/filters', undefined, {
+    includeUser: false,
+  });
 export const fetchRecall = (source, id) =>
   fetchJson(
     `/api/recalls/${encodeURIComponent(source)}/${encodeURIComponent(id)}`,
+    undefined,
+    { includeUser: false },
   );
 
 export function fetchProducts({
